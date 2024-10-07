@@ -5,23 +5,24 @@ namespace EfCore.Auditing.Factory;
 internal class AuditContextFactory : IAuditContextFactory
 {
     private readonly Dictionary<Type, string> _connectionStrings = [];
-    private readonly HashSet<string> _migratedConnectionStrings = [];
 
     public void AddAuditContext(Type dbContextType, string connectionString)
     {
-        if (!_connectionStrings.TryAdd(dbContextType, connectionString))
+        if (_connectionStrings.ContainsKey(dbContextType)) 
         {
             return;
         }
 
-        if (_migratedConnectionStrings.Contains(connectionString))
+        var dataBaseHasAlreadyBeenMigrated = _connectionStrings.ContainsValue(connectionString);
+        _connectionStrings.Add(dbContextType, connectionString);
+
+        if (dataBaseHasAlreadyBeenMigrated) 
         {
             return;
         }
 
         var context = GetAuditContext(dbContextType);
         context.Database.Migrate();
-        _migratedConnectionStrings.Add(connectionString);
     }
 
     public AuditContext GetAuditContext(Type dbContextType)
